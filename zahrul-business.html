@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Zahrul Business — Dashboard Bisnis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0a0a0b;
+  --surface: #111114;
+  --surface2: #18181d;
+  --border: #222228;
+  --border2: #2d2d36;
+  --gold: #f0b429;
+  --gold2: #e8960c;
+  --gold-dim: rgba(240,180,41,0.12);
+  --green: #2dd4a0;
+  --green-dim: rgba(45,212,160,0.12);
+  --red: #ff5e5e;
+  --red-dim: rgba(255,94,94,0.12);
+  --blue: #5eaeff;
+  --blue-dim: rgba(94,174,255,0.1);
+  --text: #f0eee8;
+  --text2: #8c8a84;
+  --text3: #555250;
+  --serif: 'DM Serif Display', serif;
+  --mono: 'DM Mono', monospace;
+  --sans: 'Outfit', sans-serif;
+  --radius: 16px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--text);font-family:var(--sans);
+  min-height:100vh;overflow-x:hidden;
+}
+
+/* Noise texture */
+body::after{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:1000;opacity:.4;
+}
+
+/* Glow */
+.glow-top{position:fixed;top:-300px;left:50%;transform:translateX(-50%);
+  width:800px;height:600px;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(240,180,41,0.06) 0%,transparent 70%);
+  pointer-events:none;z-index:0;}
+
+/* Layout */
+.wrapper{position:relative;z-index:1;display:flex;min-height:100vh;}
+
+/* Sidebar */
+.sidebar{
+  width:220px;flex-shrink:0;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;height:100vh;
+  transition:transform .3s;z-index:50;
+}
+.sidebar-logo{
+  padding:28px 24px 20px;
+  border-bottom:1px solid var(--border);
+}
+.logo-mark{
+  font-family:var(--serif);font-size:22px;color:var(--gold);
+  letter-spacing:-.5px;
+}
+.logo-sub{font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;text-transform:uppercase;margin-top:2px;}
+
+.nav{padding:16px 12px;flex:1;}
+.nav-label{font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;padding:0 12px;margin-bottom:8px;margin-top:16px;}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border-radius:10px;
+  font-size:13px;font-weight:500;color:var(--text2);
+  cursor:pointer;transition:all .15s;margin-bottom:2px;
+  border:none;background:none;width:100%;text-align:left;
+}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:var(--gold-dim);color:var(--gold);}
+.nav-icon{width:18px;text-align:center;font-size:15px;}
+
+.sidebar-footer{padding:16px 24px;border-top:1px solid var(--border);}
+.business-name{font-size:13px;font-weight:600;color:var(--text);}
+.business-type{font-size:11px;color:var(--text3);font-family:var(--mono);}
+
+/* Main */
+.main{margin-left:220px;flex:1;min-height:100vh;}
+
+/* Topbar */
+.topbar{
+  padding:20px 32px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);
+  background:rgba(10,10,11,0.8);backdrop-filter:blur(20px);
+  position:sticky;top:0;z-index:40;
+}
+.topbar-title{font-family:var(--serif);font-size:24px;color:var(--text);}
+.topbar-sub{font-size:12px;color:var(--text3);font-family:var(--mono);margin-top:2px;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+
+.period-tabs{display:flex;background:var(--surface2);border-radius:10px;padding:3px;border:1px solid var(--border);}
+.period-tab{
+  font-size:12px;font-family:var(--mono);padding:6px 14px;border-radius:7px;
+  cursor:pointer;border:none;background:none;color:var(--text2);transition:all .2s;
+}
+.period-tab.active{background:var(--gold);color:#000;font-weight:500;}
+
+.btn-add{
+  display:flex;align-items:center;gap:6px;
+  background:var(--gold);color:#000;
+  border:none;border-radius:10px;
+  padding:8px 16px;font-size:13px;font-weight:600;
+  cursor:pointer;font-family:var(--sans);
+  transition:all .2s;
+}
+.btn-add:hover{background:var(--gold2);transform:translateY(-1px);}
+
+/* Content */
+.content{padding:28px 32px;}
+
+/* Stats row */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:20px;
+  position:relative;overflow:hidden;
+  animation:slideUp .4s ease both;
+}
+.stat-card:nth-child(1){animation-delay:.05s}
+.stat-card:nth-child(2){animation-delay:.1s}
+.stat-card:nth-child(3){animation-delay:.15s}
+.stat-card:nth-child(4){animation-delay:.2s}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+.stat-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  border-radius:2px 2px 0 0;
+}
+.stat-card.gold::before{background:linear-gradient(90deg,var(--gold),transparent);}
+.stat-card.green::before{background:linear-gradient(90deg,var(--green),transparent);}
+.stat-card.red::before{background:linear-gradient(90deg,var(--red),transparent);}
+.stat-card.blue::before{background:linear-gradient(90deg,var(--blue),transparent);}
+
+.stat-icon{
+  width:36px;height:36px;border-radius:10px;
+  display:grid;place-items:center;font-size:16px;margin-bottom:14px;
+}
+.stat-card.gold .stat-icon{background:var(--gold-dim);}
+.stat-card.green .stat-icon{background:var(--green-dim);}
+.stat-card.red .stat-icon{background:var(--red-dim);}
+.stat-card.blue .stat-icon{background:var(--blue-dim);}
+
+.stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;}
+.stat-val{font-family:var(--mono);font-size:22px;font-weight:500;color:var(--text);}
+.stat-val.gold{color:var(--gold);}
+.stat-val.green{color:var(--green);}
+.stat-val.red{color:var(--red);}
+.stat-val.blue{color:var(--blue);}
+.stat-change{font-size:11px;font-family:var(--mono);margin-top:4px;}
+.stat-change.up{color:var(--green);}
+.stat-change.down{color:var(--red);}
+
+/* Charts grid */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+.chart-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:22px;
+  animation:slideUp .4s ease both;animation-delay:.25s;
+}
+.chart-card.wide{grid-column:1/-1;}
+.chart-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;}
+.chart-title{font-size:14px;font-weight:600;color:var(--text);}
+.chart-sub{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:3px;}
+
+/* Bottom grid */
+.bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+
+/* Target progress */
+.target-item{margin-bottom:16px;}
+.target-header{display:flex;justify-content:space-between;margin-bottom:6px;}
+.target-name{font-size:13px;font-weight:500;}
+.target-pct{font-family:var(--mono);font-size:12px;color:var(--text3);}
+.progress-bar{height:6px;background:var(--border2);border-radius:3px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:3px;transition:width 1s ease;}
+
+/* Top products */
+.product-item{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 0;border-bottom:1px solid var(--border);
+}
+.product-item:last-child{border-bottom:none;}
+.product-rank{
+  width:24px;height:24px;border-radius:6px;
+  background:var(--surface2);border:1px solid var(--border2);
+  display:grid;place-items:center;
+  font-family:var(--mono);font-size:11px;color:var(--text3);flex-shrink:0;
+}
+.product-rank.top{background:var(--gold-dim);border-color:rgba(240,180,41,0.3);color:var(--gold);}
+.product-info{flex:1;min-width:0;}
+.product-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.product-sales{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px;}
+.product-rev{font-family:var(--mono);font-size:13px;color:var(--green);}
+
+/* Transactions table */
+.tx-table{width:100%;border-collapse:collapse;font-size:13px;}
+.tx-table th{
+  text-align:left;padding:8px 12px;
+  font-size:10px;text-transform:uppercase;letter-spacing:1px;
+  color:var(--text3);border-bottom:1px solid var(--border);font-weight:500;
+}
+.tx-table td{padding:10px 12px;border-bottom:1px solid var(--border);}
+.tx-table tr:last-child td{border-bottom:none;}
+.tx-table tr:hover td{background:rgba(255,255,255,0.02);}
+.tx-badge{
+  font-size:10px;font-family:var(--mono);
+  padding:3px 8px;border-radius:20px;
+}
+.tx-badge.in{background:var(--green-dim);color:var(--green);}
+.tx-badge.out{background:var(--red-dim);color:var(--red);}
+.tx-amount.in{color:var(--green);font-family:var(--mono);}
+.tx-amount.out{color:var(--red);font-family:var(--mono);}
+
+/* Modal */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);
+  z-index:200;display:none;place-items:center;
+}
+.modal-overlay.open{display:grid;}
+.modal{
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:20px;padding:32px;width:100%;max-width:480px;
+  animation:modalIn .25s ease;
+}
+@keyframes modalIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.modal-title{font-family:var(--serif);font-size:22px;margin-bottom:4px;}
+.modal-sub{font-size:13px;color:var(--text3);margin-bottom:24px;}
+
+.form-group{margin-bottom:16px;}
+.form-label{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:6px;display:block;}
+.form-input{
+  width:100%;background:var(--bg);border:1px solid var(--border2);
+  border-radius:10px;color:var(--text);font-family:var(--mono);
+  font-size:14px;padding:11px 14px;outline:none;
+  transition:border-color .2s,box-shadow .2s;
+}
+.form-input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(240,180,41,0.1);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+.type-tabs{display:flex;gap:8px;margin-bottom:16px;}
+.type-tab{
+  flex:1;padding:10px;border-radius:10px;border:1px solid var(--border2);
+  background:none;color:var(--text2);font-size:13px;font-weight:500;
+  cursor:pointer;transition:all .2s;font-family:var(--sans);
+}
+.type-tab.in.active{background:var(--green-dim);border-color:rgba(45,212,160,0.4);color:var(--green);}
+.type-tab.out.active{background:var(--red-dim);border-color:rgba(255,94,94,0.4);color:var(--red);}
+
+.modal-btns{display:flex;gap:10px;margin-top:24px;}
+.btn-cancel{
+  flex:1;padding:11px;border-radius:10px;
+  background:none;border:1px solid var(--border2);
+  color:var(--text2);font-size:14px;cursor:pointer;
+  font-family:var(--sans);transition:all .2s;
+}
+.btn-cancel:hover{border-color:var(--text2);}
+.btn-save{
+  flex:2;padding:11px;border-radius:10px;
+  background:var(--gold);color:#000;border:none;
+  font-size:14px;font-weight:600;cursor:pointer;
+  font-family:var(--sans);transition:all .2s;
+}
+.btn-save:hover{background:var(--gold2);}
+
+/* Mobile */
+.hamburger{display:none;background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;padding:4px;}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:49;}
+
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+  .sidebar-overlay.open{display:block;}
+  .main{margin-left:0;}
+  .hamburger{display:block;}
+  .stats-row{grid-template-columns:1fr 1fr;}
+  .charts-grid{grid-template-columns:1fr;}
+  .chart-card.wide{grid-column:auto;}
+  .bottom-grid{grid-template-columns:1fr;}
+  .content{padding:20px 16px;}
+  .topbar{padding:16px 16px;}
+}
+@media(max-width:480px){
+  .stats-row{grid-template-columns:1fr 1fr;}
+  .stat-val{font-size:17px;}
+  .form-row{grid-template-columns:1fr;}
+}
+
+/* Empty state */
+.empty{text-align:center;padding:40px 20px;color:var(--text3);}
+.empty-icon{font-size:32px;margin-bottom:8px;}
+.empty-text{font-size:13px;}
+
+select.form-input option{background:#1a1a1f;}
+</style>
+</head>
+<body>
+<div class="glow-top"></div>
+
+<!-- Sidebar overlay -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div class="wrapper">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">Zahrul Business</div>
+      <div class="logo-sub">Analytics Dashboard</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-label">Menu</div>
+      <button class="nav-item active" onclick="showSection('dashboard')">
+        <span class="nav-icon">📊</span> Dashboard
+      </button>
+      <button class="nav-item" onclick="showSection('transaksi')">
+        <span class="nav-icon">💳</span> Transaksi
+      </button>
+      <button class="nav-item" onclick="showSection('produk')">
+        <span class="nav-icon">📦</span> Produk
+      </button>
+      <div class="nav-label">Tools</div>
+      <button class="nav-item" onclick="exportData()">
+        <span class="nav-icon">📤</span> Export CSV
+      </button>
+      <button class="nav-item" onclick="resetData()">
+        <span class="nav-icon">🗑️</span> Reset Data
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="business-name" id="biz-name">Bisnis Saya</div>
+      <div class="business-type" id="biz-type">Umum</div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:14px">
+        <button class="hamburger" onclick="openSidebar()">☰</button>
+        <div>
+          <div class="topbar-title" id="section-title">Overview</div>
+          <div class="topbar-sub" id="topbar-date"></div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="period-tabs">
+          <button class="period-tab active" onclick="setPeriod('harian',this)">Harian</button>
+          <button class="period-tab" onclick="setPeriod('bulanan',this)">Bulanan</button>
+        </div>
+        <button class="btn-add" onclick="openModal()">＋ Tambah</button>
+      </div>
+    </div>
+
+    <div class="content" id="content-dashboard">
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-card gold">
+          <div class="stat-icon">💰</div>
+          <div class="stat-label">Total Pemasukan</div>
+          <div class="stat-val gold" id="stat-income">Rp 0</div>
+          <div class="stat-change up" id="stat-income-change">— </div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-icon">💸</div>
+          <div class="stat-label">Total Pengeluaran</div>
+          <div class="stat-val red" id="stat-expense">Rp 0</div>
+          <div class="stat-change" id="stat-expense-change">— </div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon">📈</div>
+          <div class="stat-label">Laba Bersih</div>
+          <div class="stat-val green" id="stat-profit">Rp 0</div>
+          <div class="stat-change" id="stat-profit-change">— </div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-icon">👥</div>
+          <div class="stat-label">Transaksi</div>
+          <div class="stat-val blue" id="stat-tx">0</div>
+          <div class="stat-change up" id="stat-tx-change">— </div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="charts-grid">
+        <div class="chart-card wide">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Grafik Penjualan</div>
+              <div class="chart-sub" id="chart-sales-sub">Pemasukan vs Pengeluaran</div>
+            </div>
+          </div>
+          <canvas id="chart-sales" height="90"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Komposisi Keuangan</div>
+              <div class="chart-sub">Pemasukan vs Pengeluaran</div>
+            </div>
+          </div>
+          <canvas id="chart-donut" height="180"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Target vs Pencapaian</div>
+              <div class="chart-sub">Bulan ini</div>
+            </div>
+            <button onclick="openTargetModal()" style="font-size:11px;background:var(--surface2);border:1px solid var(--border2);color:var(--text2);padding:5px 10px;border-radius:6px;cursor:pointer;font-family:var(--mono);">Set Target</button>
+          </div>
+          <div id="targets-container"></div>
+        </div>
+      </div>
+
+      <!-- Bottom -->
+      <div class="bottom-grid">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">🏆 Top Produk/Kategori</div>
+              <div class="chart-sub">Berdasarkan pendapatan</div>
+            </div>
+          </div>
+          <div id="top-products"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Transaksi Terbaru</div>
+              <div class="chart-sub">10 transaksi terakhir</div>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="tx-table">
+              <thead>
+                <tr>
+                  <th>Tanggal</th>
+                  <th>Keterangan</th>
+                  <th>Tipe</th>
+                  <th>Jumlah</th>
+                </tr>
+              </thead>
+              <tbody id="tx-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Transaction Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title">Tambah Transaksi</div>
+    <div class="modal-sub">Catat pemasukan atau pengeluaran</div>
+    <div class="type-tabs">
+      <button class="type-tab in active" id="tab-in" onclick="setType('in')">📈 Pemasukan</button>
+      <button class="type-tab out" id="tab-out" onclick="setType('out')">📉 Pengeluaran</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Keterangan / Produk</label>
+      <input class="form-input" id="f-desc" placeholder="Contoh: Penjualan Kopi, Bayar Listrik..." autocomplete="off"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Jumlah (Rp)</label>
+        <input class="form-input" id="f-amount" type="number" placeholder="50000" min="0"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kategori</label>
+        <select class="form-input" id="f-category">
+          <option value="Penjualan">Penjualan</option>
+          <option value="Jasa">Jasa</option>
+          <option value="Investasi">Investasi</option>
+          <option value="Lainnya">Lainnya</option>
+          <option value="Operasional">Operasional</option>
+          <option value="Gaji">Gaji</option>
+          <option value="Marketing">Marketing</option>
+          <option value="Utilitas">Utilitas</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Tanggal</label>
+        <input class="form-input" id="f-date" type="date"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Qty / Unit</label>
+        <input class="form-input" id="f-qty" type="number" placeholder="1" min="1" value="1"/>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Batal</button>
+      <button class="btn-save" onclick="saveTransaction()">Simpan Transaksi</button>
+    </div>
+  </div>
+</div>
+
+<!-- Target Modal -->
+<div class="modal-overlay" id="target-modal">
+  <div class="modal">
+    <div class="modal-title">Set Target</div>
+    <div class="modal-sub">Tentukan target keuangan bulan ini</div>
+    <div class="form-group">
+      <label class="form-label">Target Pemasukan (Rp)</label>
+      <input class="form-input" id="t-income" type="number" placeholder="10000000"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Target Laba Bersih (Rp)</label>
+      <input class="form-input" id="t-profit" type="number" placeholder="5000000"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Target Transaksi</label>
+      <input class="form-input" id="t-tx" type="number" placeholder="100"/>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeTargetModal()">Batal</button>
+      <button class="btn-save" onclick="saveTargets()">Simpan Target</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ───────────────────────────────────────────────────────────────────
+let transactions = JSON.parse(localStorage.getItem('biz_tx') || '[]');
+let targets = JSON.parse(localStorage.getItem('biz_targets') || '{"income":10000000,"profit":5000000,"tx":100}');
+let currentType = 'in';
+let currentPeriod = 'harian';
+let chartSales = null, chartDonut = null;
+
+// ── Init ────────────────────────────────────────────────────────────────────
+function init() {
+  // Set date
+  document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+
+  render();
+}
+
+
+
+function save() {
+  localStorage.setItem('biz_tx', JSON.stringify(transactions));
+}
+
+// ── Render ──────────────────────────────────────────────────────────────────
+function render() {
+  const filtered = filterByPeriod(transactions, currentPeriod);
+  updateStats(filtered);
+  renderSalesChart(filtered);
+  renderDonutChart(filtered);
+  renderTargets(filtered);
+  renderTopProducts(filtered);
+  renderRecentTx();
+}
+
+function filterByPeriod(txs, period) {
+  const now = new Date();
+  return txs.filter(t => {
+    const d = new Date(t.date);
+    if (period === 'harian') {
+      const diff = (now - d) / (1000*60*60*24);
+      return diff <= 30;
+    } else {
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }
+  });
+}
+
+function updateStats(txs) {
+  const income  = txs.filter(t=>t.type==='in').reduce((s,t)=>s+t.amount,0);
+  const expense = txs.filter(t=>t.type==='out').reduce((s,t)=>s+t.amount,0);
+  const profit  = income - expense;
+
+  document.getElementById('stat-income').textContent  = fmt(income);
+  document.getElementById('stat-expense').textContent = fmt(expense);
+  document.getElementById('stat-profit').textContent  = fmt(profit);
+  document.getElementById('stat-tx').textContent      = txs.length;
+
+  document.getElementById('stat-profit').style.color = profit >= 0 ? 'var(--green)' : 'var(--red)';
+}
+
+function renderSalesChart(txs) {
+  const labels = [], incomeData = [], expenseData = [];
+  const days = currentPeriod === 'harian' ? 14 : 30;
+  const now = new Date();
+
+  for (let i = days-1; i >= 0; i--) {
+    const d = new Date(now); d.setDate(d.getDate()-i);
+    const key = d.toISOString().split('T')[0];
+    const label = currentPeriod==='harian'
+      ? d.toLocaleDateString('id-ID',{day:'numeric',month:'short'})
+      : d.toLocaleDateString('id-ID',{day:'numeric'});
+    labels.push(label);
+    const dayTxs = txs.filter(t=>t.date===key);
+    incomeData.push(dayTxs.filter(t=>t.type==='in').reduce((s,t)=>s+t.amount,0));
+    expenseData.push(dayTxs.filter(t=>t.type==='out').reduce((s,t)=>s+t.amount,0));
+  }
+
+  if (chartSales) chartSales.destroy();
+  const ctx = document.getElementById('chart-sales').getContext('2d');
+  chartSales = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label:'Pemasukan',data:incomeData,
+          borderColor:'#f0b429',backgroundColor:'rgba(240,180,41,0.06)',
+          borderWidth:2,pointRadius:3,pointBackgroundColor:'#f0b429',
+          fill:true,tension:.4
+        },
+        {
+          label:'Pengeluaran',data:expenseData,
+          borderColor:'#ff5e5e',backgroundColor:'rgba(255,94,94,0.05)',
+          borderWidth:2,pointRadius:3,pointBackgroundColor:'#ff5e5e',
+          fill:true,tension:.4
+        }
+      ]
+    },
+    options:{
+      responsive:true,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{color:'#8c8a84',font:{family:'DM Mono',size:11}}},tooltip:{
+        backgroundColor:'#18181d',borderColor:'#2d2d36',borderWidth:1,
+        titleColor:'#f0eee8',bodyColor:'#8c8a84',
+        callbacks:{label:c=>' '+c.dataset.label+': '+fmt(c.raw)}
+      }},
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#555250',font:{family:'DM Mono',size:10}}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#555250',font:{family:'DM Mono',size:10},callback:v=>fmtShort(v)}}
+      }
+    }
+  });
+}
+
+function renderDonutChart(txs) {
+  const income  = txs.filter(t=>t.type==='in').reduce((s,t)=>s+t.amount,0);
+  const expense = txs.filter(t=>t.type==='out').reduce((s,t)=>s+t.amount,0);
+
+  if (chartDonut) chartDonut.destroy();
+  const ctx = document.getElementById('chart-donut').getContext('2d');
+  chartDonut = new Chart(ctx,{
+    type:'doughnut',
+    data:{
+      labels:['Pemasukan','Pengeluaran'],
+      datasets:[{
+        data:[income||1,expense||1],
+        backgroundColor:['rgba(240,180,41,0.8)','rgba(255,94,94,0.8)'],
+        borderColor:['#f0b429','#ff5e5e'],borderWidth:1,
+        hoverOffset:6
+      }]
+    },
+    options:{
+      responsive:true,cutout:'72%',
+      plugins:{
+        legend:{position:'bottom',labels:{color:'#8c8a84',font:{family:'DM Mono',size:11},padding:16}},
+        tooltip:{
+          backgroundColor:'#18181d',borderColor:'#2d2d36',borderWidth:1,
+          callbacks:{label:c=>` ${c.label}: ${fmt(c.raw)}`}
+        }
+      }
+    }
+  });
+}
+
+function renderTargets(txs) {
+  const income  = txs.filter(t=>t.type==='in').reduce((s,t)=>s+t.amount,0);
+  const expense = txs.filter(t=>t.type==='out').reduce((s,t)=>s+t.amount,0);
+  const profit  = income - expense;
+  const tx      = txs.length;
+
+  const items = [
+    {name:'Pemasukan',current:income,target:targets.income,color:'#f0b429'},
+    {name:'Laba Bersih',current:Math.max(0,profit),target:targets.profit,color:'#2dd4a0'},
+    {name:'Transaksi',current:tx,target:targets.tx,color:'#5eaeff',isCount:true},
+  ];
+
+  const c = document.getElementById('targets-container');
+  c.innerHTML = items.map(item => {
+    const pct = Math.min(100, Math.round((item.current/item.target)*100));
+    return `<div class="target-item">
+      <div class="target-header">
+        <span class="target-name">${item.name}</span>
+        <span class="target-pct">${item.isCount?item.current+'/'+item.target:fmt(item.current)+' / '+fmtShort(item.target)} &nbsp;${pct}%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width:${pct}%;background:${item.color};"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderTopProducts(txs) {
+  const map = {};
+  txs.filter(t=>t.type==='in').forEach(t => {
+    if (!map[t.desc]) map[t.desc] = {name:t.desc,revenue:0,sales:0};
+    map[t.desc].revenue += t.amount;
+    map[t.desc].sales += t.qty||1;
+  });
+  const sorted = Object.values(map).sort((a,b)=>b.revenue-a.revenue).slice(0,6);
+  const el = document.getElementById('top-products');
+  if (!sorted.length) { el.innerHTML='<div class="empty"><div class="empty-icon">📦</div><div class="empty-text">Belum ada data produk</div></div>'; return; }
+  el.innerHTML = sorted.map((p,i) => `
+    <div class="product-item">
+      <div class="product-rank ${i===0?'top':''}">${i+1}</div>
+      <div class="product-info">
+        <div class="product-name">${escHtml(p.name)}</div>
+        <div class="product-sales">${p.sales} transaksi</div>
+      </div>
+      <div class="product-rev">${fmt(p.revenue)}</div>
+    </div>`).join('');
+}
+
+function renderRecentTx() {
+  const recent = [...transactions].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,10);
+  const tbody = document.getElementById('tx-tbody');
+  if (!recent.length) { tbody.innerHTML='<tr><td colspan="4" class="empty"><div class="empty-icon">💳</div><div class="empty-text">Belum ada transaksi</div></td></tr>'; return; }
+  tbody.innerHTML = recent.map(t => `
+    <tr>
+      <td style="color:var(--text3);font-family:var(--mono);font-size:11px">${formatDate(t.date)}</td>
+      <td>${escHtml(t.desc)}</td>
+      <td><span class="tx-badge ${t.type}">${t.type==='in'?'Masuk':'Keluar'}</span></td>
+      <td class="tx-amount ${t.type}">${t.type==='in'?'+':'-'}${fmt(t.amount)}</td>
+    </tr>`).join('');
+}
+
+// ── Controls ─────────────────────────────────────────────────────────────────
+function setPeriod(p, btn) {
+  currentPeriod = p;
+  document.querySelectorAll('.period-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+// ── Modal ────────────────────────────────────────────────────────────────────
+function openModal() {
+  document.getElementById('modal').classList.add('open');
+  document.getElementById('f-desc').focus();
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  document.getElementById('f-desc').value='';
+  document.getElementById('f-amount').value='';
+  document.getElementById('f-qty').value='1';
+}
+function setType(t) {
+  currentType = t;
+  document.getElementById('tab-in').classList.toggle('active', t==='in');
+  document.getElementById('tab-out').classList.toggle('active', t==='out');
+  // Update category options
+  const sel = document.getElementById('f-category');
+  if (t==='in') {
+    sel.innerHTML='<option>Penjualan</option><option>Jasa</option><option>Investasi</option><option>Lainnya</option>';
+  } else {
+    sel.innerHTML='<option>Operasional</option><option>Gaji</option><option>Marketing</option><option>Utilitas</option><option>Lainnya</option>';
+  }
+}
+function saveTransaction() {
+  const desc   = document.getElementById('f-desc').value.trim();
+  const amount = parseFloat(document.getElementById('f-amount').value);
+  const date   = document.getElementById('f-date').value;
+  const cat    = document.getElementById('f-category').value;
+  const qty    = parseInt(document.getElementById('f-qty').value)||1;
+  if (!desc||!amount||!date) { alert('Lengkapi semua field!'); return; }
+  transactions.push({id:Date.now(),date,desc,type:currentType,category:cat,amount,qty});
+  save(); closeModal(); render();
+}
+
+// Target Modal
+function openTargetModal() {
+  document.getElementById('t-income').value = targets.income;
+  document.getElementById('t-profit').value = targets.profit;
+  document.getElementById('t-tx').value = targets.tx;
+  document.getElementById('target-modal').classList.add('open');
+}
+function closeTargetModal() { document.getElementById('target-modal').classList.remove('open'); }
+function saveTargets() {
+  targets = {
+    income: parseFloat(document.getElementById('t-income').value)||10000000,
+    profit: parseFloat(document.getElementById('t-profit').value)||5000000,
+    tx:     parseInt(document.getElementById('t-tx').value)||100
+  };
+  localStorage.setItem('biz_targets', JSON.stringify(targets));
+  closeTargetModal(); render();
+}
+
+// Sidebar mobile
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebar-overlay').classList.add('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+}
+
+function showSection(s) {
+  closeSidebar();
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.getElementById('section-title').textContent =
+    s==='dashboard'?'Overview':s==='transaksi'?'Transaksi':s==='produk'?'Produk':'Export';
+}
+
+// Export
+function exportData() {
+  const rows = [['Tanggal','Keterangan','Kategori','Tipe','Jumlah','Qty']];
+  transactions.forEach(t=>rows.push([t.date,t.desc,t.category,t.type==='in'?'Pemasukan':'Pengeluaran',t.amount,t.qty||1]));
+  const csv = rows.map(r=>r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download = 'zahrul-business-export.csv';
+  a.click();
+}
+
+function resetData() {
+  if (confirm('Hapus semua data transaksi?')) {
+    transactions = [];
+    localStorage.removeItem('biz_tx');
+    render();
+  }
+}
+
+// ── Utils ────────────────────────────────────────────────────────────────────
+function fmt(n) {
+  return 'Rp ' + Math.round(n).toLocaleString('id-ID');
+}
+function fmtShort(n) {
+  if (n >= 1e9) return 'Rp '+(n/1e9).toFixed(1)+'M';
+  if (n >= 1e6) return 'Rp '+(n/1e6).toFixed(1)+'jt';
+  if (n >= 1e3) return 'Rp '+(n/1e3).toFixed(0)+'rb';
+  return 'Rp '+n;
+}
+function formatDate(d) {
+  return new Date(d).toLocaleDateString('id-ID',{day:'numeric',month:'short'});
+}
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Close modal on overlay click
+document.getElementById('modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+document.getElementById('target-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeTargetModal();
+});
+
+init();
+</script>
+</body>
+</html>
